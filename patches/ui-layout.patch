@@ -1,15 +1,16 @@
 diff --git a/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/client.js b/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/client.js
-index a85b668..8be26a3 100644
+index a85b668..c5aa5b4 100644
 --- a/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/client.js
 +++ b/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/client.js
-@@ -31,23 +31,34 @@ window.__ModuleLoader__.load({
+@@ -31,23 +31,35 @@ window.__ModuleLoader__.load({
  		* @param details - details width preference in px (0 = closed).
  		* @returns resolved widths; details 0 means visually closed (never unmounted), while a closed sidebar keeps its compact rail.
  		*/
 -		function computeColumns(viewport, sidebar, details) {
 +		function computeColumns(viewport, sidebar, explorer, details) {
  			const s = sidebar === 0 ? 56 : clampWidth(sidebar, 264, 420);
-+			const e0 = explorer === 0 ? 0 : clampWidth(explorer, 240, 420);
++			// collapsed explorer keeps a 28px rail with the reopen button
++			const e0 = explorer === 0 ? 28 : clampWidth(explorer, 240, 420);
  			const d0 = details === 0 ? 0 : clampWidth(details, 300, 520);
 -			if (s + d0 + 640 <= viewport) return {
 +			if (s + e0 + d0 + 640 <= viewport) return {
@@ -28,7 +29,7 @@ index a85b668..8be26a3 100644
 +				explorer: e0,
  				details: d1
  			};
-+			const e1 = e0 === 0 ? 0 : Math.max(240, viewport - s - 640);
++			const e1 = e0 === 28 ? 28 : Math.max(240, viewport - s - 640);
 +			if (s + e1 + 640 <= viewport) return {
 +				sidebar: s,
 +				center: 640,
@@ -37,26 +38,28 @@ index a85b668..8be26a3 100644
 +			};
  			return {
  				sidebar: s,
- 				center: Math.max(0, viewport - s),
-+				explorer: 0,
+-				center: Math.max(0, viewport - s),
++				center: Math.max(0, viewport - s - 28),
++				explorer: 28,
  				details: 0
  			};
  		}
-@@ -98,6 +109,13 @@ window.__ModuleLoader__.load({
+@@ -98,6 +110,14 @@ window.__ModuleLoader__.load({
  				children: props.children
  			});
  		}
-+		/** Explorer column grid item (DSH Workbench local extension); unmounts when closed. */
++		/** Explorer column grid item (DSH Workbench local extension); collapsed keeps the reopen rail. */
 +		function ExplorerColumn(props) {
 +			return (0, react_jsx_runtime.jsx)("div", {
 +				className: "dsh-explorer-col",
++				"data-collapsed": props.collapsed || void 0,
 +				children: props.children
 +			});
 +		}
  		/**
  		* One drag handle: pointer capture, rAF-throttled dx reports against the drag-start origin.
  		* `side` keys the hover-reveal CSS to the owning column.
-@@ -192,7 +210,7 @@ window.__ModuleLoader__.load({
+@@ -192,7 +212,7 @@ window.__ModuleLoader__.load({
  				actions.setNarrow(narrow);
  			}, [actions, narrow]);
  			const sidebarCollapsed = narrow ? !panels.narrowExpanded : panels.sidebar === 0;
@@ -65,7 +68,7 @@ index a85b668..8be26a3 100644
  			const colsRef = (0, react.useRef)(cols);
  			colsRef.current = cols;
  			const sidebarBase = (0, react.useRef)(0);
-@@ -215,10 +233,18 @@ window.__ModuleLoader__.load({
+@@ -215,10 +235,18 @@ window.__ModuleLoader__.load({
  			const onDetailsDrag = (0, react.useCallback)((dx) => {
  				actions.setDetails(detailsBase.current - dx);
  			}, [actions]);
@@ -85,20 +88,20 @@ index a85b668..8be26a3 100644
  				"data-sidebar-collapsed": sidebarCollapsed || void 0,
  				"data-details-collapsed": cols.details === 0 || void 0,
  				"data-dragging": dragging || void 0,
-@@ -230,7 +256,7 @@ window.__ModuleLoader__.load({
+@@ -230,7 +258,7 @@ window.__ModuleLoader__.load({
  							width: cols.sidebar
  						})
  					}),
 -					(0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [(0, react_jsx_runtime.jsx)(CenterColumn, { children: renderSlot("conversation", {}) }), (0, react_jsx_runtime.jsx)(DetailsColumn, { children: renderSlot("details", {}) })] }),
-+					(0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [(0, react_jsx_runtime.jsx)(CenterColumn, { children: renderSlot("conversation", {}) }), cols.explorer > 0 && (0, react_jsx_runtime.jsx)(ExplorerColumn, { children: renderSlot("explorer", {}) }), (0, react_jsx_runtime.jsx)(DetailsColumn, { children: renderSlot("details", {}) })] }),
++					(0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [(0, react_jsx_runtime.jsx)(CenterColumn, { children: renderSlot("conversation", {}) }), (0, react_jsx_runtime.jsx)(ExplorerColumn, { collapsed: cols.explorer <= 28, children: cols.explorer <= 28 ? (0, react_jsx_runtime.jsx)("button", { type: "button", className: "dsh-explorer-rail-btn", title: "打开文件树", "aria-label": "打开文件树", onClick: () => actions.toggleExplorer(), children: "\u2039" }) : renderSlot("explorer", {}) }), (0, react_jsx_runtime.jsx)(DetailsColumn, { children: renderSlot("details", {}) })] }),
  					(0, react_jsx_runtime.jsx)("div", {
  						className: AppFrame_module_css_default.overlayLayer,
  						"data-shell-overlay": true,
-@@ -243,6 +269,13 @@ window.__ModuleLoader__.load({
+@@ -243,6 +271,13 @@ window.__ModuleLoader__.load({
  						onDrag: onSidebarDrag,
  						onEnd: onDragEnd
  					}),
-+					cols.explorer > 0 && (0, react_jsx_runtime.jsx)(DragHandle, {
++					cols.explorer > 28 && (0, react_jsx_runtime.jsx)(DragHandle, {
 +						side: "explorer",
 +						left: viewport - cols.details - cols.explorer,
 +						onStart: onExplorerStart,
@@ -108,7 +111,7 @@ index a85b668..8be26a3 100644
  					cols.details > 0 && (0, react_jsx_runtime.jsx)(DragHandle, {
  						side: "details",
  						left: viewport - cols.details,
-@@ -278,6 +311,7 @@ window.__ModuleLoader__.load({
+@@ -278,6 +313,7 @@ window.__ModuleLoader__.load({
  			return (0, _deepseek_ai_dsh_client_runtime_client.defineStore)({
  				init: () => ({
  					sidebar: 280,
@@ -116,7 +119,7 @@ index a85b668..8be26a3 100644
  					details: 0,
  					narrow: false,
  					narrowExpanded: false
-@@ -286,6 +320,12 @@ window.__ModuleLoader__.load({
+@@ -286,6 +322,12 @@ window.__ModuleLoader__.load({
  					setSidebar: (d, px) => {
  						d.sidebar = clampWidth(px, 264, 420);
  					},
@@ -129,7 +132,7 @@ index a85b668..8be26a3 100644
  					setDetails: (d, px) => {
  						d.details = clampWidth(px, 300, 520);
  					},
-@@ -326,6 +366,10 @@ window.__ModuleLoader__.load({
+@@ -326,6 +368,10 @@ window.__ModuleLoader__.load({
  			toggleSidebar() {
  				this.#require().toggleSidebar();
  			}
@@ -140,20 +143,20 @@ index a85b668..8be26a3 100644
  			/** Open the details panel (no-op when already open). */
  			openDetails() {
  				this.#require().openDetails();
-@@ -400,6 +444,12 @@ window.__ModuleLoader__.load({
+@@ -400,6 +446,12 @@ window.__ModuleLoader__.load({
  		*/
  		function apply(ctx) {
  			const layout = new LayoutController();
 +			if (typeof document !== "undefined" && document.querySelector("style[data-dsh-explorer-css]") === null) {
 +				const tag = document.createElement("style");
 +				tag.dataset.dshExplorerCss = "1";
-+				tag.textContent = ".dsh-explorer-col{background:var(--dsw-specific-sidebar-fill);border-left:1px solid var(--dsw-alias-border-l2);min-width:0;overflow:hidden;height:100%;display:flex;flex-direction:column}.pI_x6G_handle[data-side=explorer]:after{content:\"\";box-sizing:border-box;background:var(--dsw-alias-button-floating-fill);border:1px solid var(--dsw-alias-border-l2-darkmode-thin);opacity:0;width:12px;height:32px;transition:opacity var(--ds-transition-duration-slow) var(--ds-ease-in-out), background var(--ds-transition-duration-slow) var(--ds-ease-in-out);border-radius:10px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.dsh-explorer-col:hover~.pI_x6G_handle[data-side=explorer]:after,.pI_x6G_handle[data-side=explorer]:hover:after,.pI_x6G_handle[data-side=explorer][data-dragging=true]:after{opacity:1}";
++				tag.textContent = ".dsh-explorer-col{background:var(--dsw-specific-sidebar-fill);border-left:1px solid var(--dsw-alias-border-l2);min-width:0;overflow:hidden;height:100%;display:flex;flex-direction:column}.dsh-explorer-col[data-collapsed]{display:flex;flex-direction:row;align-items:center;justify-content:center}.dsh-explorer-rail-btn{cursor:pointer;border:none;background:transparent;color:var(--dsw-alias-label-secondary);width:28px;height:100%;font-size:16px;padding:0}.dsh-explorer-rail-btn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.pI_x6G_handle[data-side=explorer]:after{content:\"\";box-sizing:border-box;background:var(--dsw-alias-button-floating-fill);border:1px solid var(--dsw-alias-border-l2-darkmode-thin);opacity:0;width:12px;height:32px;transition:opacity var(--ds-transition-duration-slow) var(--ds-ease-in-out), background var(--ds-transition-duration-slow) var(--ds-ease-in-out);border-radius:10px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.dsh-explorer-col:hover~.pI_x6G_handle[data-side=explorer]:after,.pI_x6G_handle[data-side=explorer]:hover:after,.pI_x6G_handle[data-side=explorer][data-dragging=true]:after{opacity:1}";
 +				document.head.appendChild(tag);
 +			}
  			ctx.effect(() => {
  				const disposeService = ctx.reflect.provide("layout", layout);
  				const disposeRegistration = ctx.slots.register({
-@@ -413,6 +463,10 @@ window.__ModuleLoader__.load({
+@@ -413,6 +465,10 @@ window.__ModuleLoader__.load({
  							kind: "single",
  							scope: "session-maybe"
  						},
