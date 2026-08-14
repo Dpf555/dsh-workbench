@@ -1,0 +1,41 @@
+diff --git a/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/client.js b/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/client.js
+index 629e313..925708c 100644
+--- a/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/client.js
++++ b/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/client.js
+@@ -281,6 +281,36 @@ window.__ModuleLoader__.load({
+ 				},
+ 				inject: injectProps
+ 			}, SidebarRoot), "ui-sidebar: slot registration");
++			// DSH Workbench (local extension): VS Code-style Explorer + Monaco editor.
++			// Loads the workbench bundle served by the /wb route (host provider: the
++			// dynamic plugin in this session, or the durable @dsh-local/dsh-workbench
++			// profile package after a dsh restart). Idempotent — the bundle guards
++			// double mounts and identical slot ids replace rather than duplicate.
++			try {
++				const wbReady = () => typeof window !== "undefined" && window.__DSH_WORKBENCH__ !== void 0 && typeof window.__DSH_WORKBENCH__.mount === "function";
++				const wbMount = () => {
++					if (!wbReady()) return;
++					try {
++						window.__DSH_WORKBENCH__.mount({ slots: ctx.slots, locale: ctx.locale, NS: "workbench", React: react, layout: ctx.layout });
++					} catch (error) {
++						console.error("[dsh-workbench] bundle mount failed:", error);
++					}
++				};
++				if (typeof document === "undefined") wbMount();
++				else {
++					let wbScript = document.querySelector("script[data-dsh-workbench-bundle]");
++					if (wbScript === null) {
++						wbScript = document.createElement("script");
++						wbScript.src = "/wb/workbench-client.js";
++						wbScript.dataset.dshWorkbenchBundle = "1";
++						document.head.appendChild(wbScript);
++					}
++					wbScript.addEventListener("load", wbMount);
++					if (wbReady()) wbMount();
++				}
++			} catch (error) {
++				console.error("[dsh-workbench] bootstrap failed:", error);
++			}
+ 		}
+ 		//#endregion
+ 		exports.apply = apply;

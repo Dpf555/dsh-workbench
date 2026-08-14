@@ -1,0 +1,43 @@
+{
+  "name": "@dsh-local/dsh-workbench",
+  "version": "0.2.0",
+  "description": "VS Code-style three-column layout for the DSH web GUI: docked Explorer file tree + Monaco code editor that replaces the chat column when a file is opened",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "assets/**",
+    "patches/**",
+    "scripts/**",
+    "dynamic/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "setup:assets": "node scripts/setup-assets.mjs",
+    "generate:seti": "node scripts/generate-seti.mjs",
+    "patch:checkout": "node scripts/apply-patches.mjs",
+    "install:profile": "node scripts/install-profile.mjs"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "vscode",
+    "monaco",
+    "explorer",
+    "workbench"
+  ],
+  "license": "MIT"
+}
