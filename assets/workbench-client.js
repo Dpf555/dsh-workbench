@@ -120,34 +120,34 @@
       '.wb-row-loading{color:var(--dsw-alias-label-tertiary);font-style:italic}' +
       '.wbx-create-row{display:flex;align-items:center;height:24px;margin:2px 0;padding-left:20px;gap:6px}' +
       '.wbx-create-input{flex:1;background:var(--dsw-alias-bg-base);border:1px solid #007fd4;color:var(--dsw-alias-label-primary);outline:none;height:20px;line-height:20px;padding:0 6px;font-size:13px;font-family:inherit;border-radius:2px}' +
-      '.wbx-editor{height:100%;display:flex;flex-direction:column;min-width:0;background:#1e1e1e;color:#cccccc}' +
-      '.wbx-tabs{flex:none;display:flex;align-items:stretch;height:35px;background:#252526;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid rgba(128,128,128,.2)}' +
+      '.wbx-editor{height:100%;display:flex;flex-direction:column;min-width:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}' +
+      '.wbx-tabs{flex:none;display:flex;align-items:stretch;height:35px;background:var(--dsw-specific-sidebar-fill);overflow-x:auto;overflow-y:hidden;border-bottom:1px solid var(--dsw-alias-border-l2)}' +
       '.wbx-tabs::-webkit-scrollbar{height:3px}.wbx-tabs::-webkit-scrollbar-thumb{background:rgba(121,121,121,.4)}' +
-      '.wbx-tab{display:flex;align-items:center;gap:6px;padding:0 10px;background:#2d2d2d;color:#969696;cursor:pointer;border-right:1px solid #252526;white-space:nowrap;min-width:110px;max-width:200px;font-size:13px}' +
-      '.wbx-tab:hover{background:#383838}' +
-      '.wbx-tab-active{background:#1e1e1e;color:#ffffff;box-shadow:inset 0 1px 0 #007acc}' +
+      '.wbx-tab{display:flex;align-items:center;gap:6px;padding:0 10px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;border-right:1px solid var(--dsw-alias-border-l2);white-space:nowrap;min-width:110px;max-width:200px;font-size:13px}' +
+      '.wbx-tab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}' +
+      '.wbx-tab-active{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);box-shadow:inset 0 1px 0 #007acc}' +
       '.wbx-tab-icon{flex:none;font-size:14px}' +
       '.wbx-tab-label{flex:1;overflow:hidden;text-overflow:ellipsis}' +
-      '.wbx-tab-dirty .wbx-tab-label::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#cccccc;margin-left:6px;vertical-align:1px}' +
+      '.wbx-tab-dirty .wbx-tab-label::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--dsw-alias-label-secondary);margin-left:6px;vertical-align:1px}' +
       '.wbx-tab-x{flex:none;width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;color:inherit}' +
-      '.wbx-tab-x:hover{background:rgba(255,255,255,.15);color:#ffffff}' +
+      '.wbx-tab-x:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}' +
       '.wbx-banner{flex:none;display:flex;align-items:center;gap:8px;padding:5px 12px;font-size:12px}' +
-      '.wbx-banner-ok{background:#1e3a1e;color:#7cc97c}' +
-      '.wbx-banner-warn{background:#4a3a1a;color:#e2c08d}' +
-      '.wbx-banner-error{background:#4a1e1e;color:#e28d8d}' +
+      '.wbx-banner-ok{background:color-mix(in srgb, #28c840 18%, var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary)}' +
+      '.wbx-banner-warn{background:color-mix(in srgb, #d7a83e 22%, var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary)}' +
+      '.wbx-banner-error{background:color-mix(in srgb, #d44 18%, var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary)}' +
       '.wbx-banner-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '.wbx-banner-btn{cursor:pointer;border:1px solid currentColor;background:transparent;color:inherit;font-size:12px;border-radius:3px;padding:2px 10px;font-family:inherit;margin-left:6px}' +
       '.wbx-banner-btn:hover{opacity:.85}' +
       '.wbx-holder{flex:1;min-height:0;position:relative}' +
-      '.wbx-welcome{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#969696;font-family:"Segoe UI",system-ui,sans-serif}' +
-      '.wbx-welcome-icon{font-size:64px;color:#3f3f46}' +
-      '.wbx-welcome-title{font-size:20px;color:#cccccc}' +
+      '.wbx-welcome{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--dsw-alias-label-tertiary);font-family:"Segoe UI",system-ui,sans-serif}' +
+      '.wbx-welcome-icon{font-size:64px;color:var(--dsw-alias-border-l3, var(--dsw-alias-label-tertiary))}' +
+      '.wbx-welcome-title{font-size:20px;color:var(--dsw-alias-label-primary)}' +
       '.wbx-welcome-hint{font-size:13px;max-width:420px;text-align:center;line-height:1.6}' +
-      '.wbx-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#858585;font-size:13px}' +
+      '.wbx-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-tertiary);font-size:13px}' +
       '.wbx-statusbar{flex:none;display:flex;align-items:center;justify-content:space-between;height:22px;background:#007acc;color:#ffffff;font-size:12px;padding:0 12px}' +
       '.wbx-statusbar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-      '.wbx-back{flex:none;display:flex;align-items:center;gap:6px;cursor:pointer;background:transparent;border:none;color:#cccccc;padding:6px 12px;font-size:13px;font-family:inherit}' +
-      '.wbx-back:hover{background:#2a2d2e}' +
+      '.wbx-back{flex:none;display:flex;align-items:center;gap:6px;cursor:pointer;background:transparent;border:none;color:var(--dsw-alias-label-primary);padding:6px 12px;font-size:13px;font-family:inherit}' +
+      '.wbx-back:hover{background:var(--dsw-alias-interactive-bg-hover)}' +
       'body[data-wb-editor-active] [data-composer-seat]{display:none}')
 
     // ---- seti icon assets (with retry; failures reset so later mounts retry) ----
@@ -227,6 +227,7 @@
       savedAltIds: new Map(),
       monaco: null,
       monacoState: 'idle',
+      editorTheme: 'vs-dark',
       editor: null,
       tree: null,
       create: null,
@@ -248,6 +249,20 @@
       const b = bridgeFor(ui.sessionId)
       if (b !== null && typeof b.setView === 'function') b.setView('workbench.editor')
     }
+
+    // ---- theme tracking: monaco (vs ↔ vs-dark) and chrome follow the DSH theme ----
+    const isDarkTheme = () => typeof document !== 'undefined' && document.body.hasAttribute('data-ds-dark-theme')
+    const applyEditorTheme = () => {
+      const name = isDarkTheme() ? 'vs-dark' : 'vs'
+      if (ui.editorTheme === name) return
+      ui.editorTheme = name
+      if (ui.monaco !== null) { try { ui.monaco.editor.setTheme(name) } catch (e) {} }
+      emit()
+    }
+    if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+      new MutationObserver(() => { applyEditorTheme() }).observe(document.body, { attributes: true, attributeFilter: ['data-ds-dark-theme'] })
+    }
+    applyEditorTheme()
 
     // ---- monaco boot (page-level, started on first need) ----
     let bootStarted = false
@@ -276,6 +291,7 @@
             if (window.monaco && window.monaco.editor) {
               ui.monaco = window.monaco
               ui.monacoState = 'ready'
+              applyEditorTheme()
             } else ui.monacoState = 'error'
             emit()
           }, () => { ui.monacoState = 'error'; emit() })
@@ -640,7 +656,7 @@
       React.useEffect(() => {
         if (u.monacoState !== 'ready' || u.editor !== null || holderRef.current === null) return
         const editor = u.monaco.editor.create(holderRef.current, {
-          theme: 'vs-dark',
+          theme: u.editorTheme,
           automaticLayout: true,
           fontSize: 13,
           fontFamily: 'Consolas, "Cascadia Code", "Courier New", monospace',
@@ -747,7 +763,7 @@
           React.createElement('div', { className: 'wbx-holder', ref: holderRef, children: [
             u.monacoState === 'loading' ? React.createElement('div', { className: 'wbx-loading', children: t('loading') }) : null,
             u.monacoState === 'error' && activeTab !== null ? React.createElement('textarea', {
-              style: { position: 'absolute', inset: 0, width: '100%', height: '100%', boxSizing: 'border-box', background: '#1e1e1e', color: '#cccccc', border: 'none', padding: 10, fontFamily: 'Consolas, monospace', fontSize: 13, resize: 'none', outline: 'none' },
+              style: { position: 'absolute', inset: 0, width: '100%', height: '100%', boxSizing: 'border-box', background: 'var(--dsw-alias-bg-base)', color: 'var(--dsw-alias-label-primary)', border: 'none', padding: 10, fontFamily: 'Consolas, monospace', fontSize: 13, resize: 'none', outline: 'none' },
               value: u.contents.get(activeTab.path) !== undefined ? u.contents.get(activeTab.path) : '',
               onChange: (e) => { u.contents.set(activeTab.path, e.target.value); emit() }
             }) : null,
