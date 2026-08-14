@@ -29,6 +29,40 @@ const map = { fileExtensions: {}, fileNames: {}, folder: 'seti-folder', folderOp
 for (const [ext, id] of Object.entries(json.fileExtensions)) map.fileExtensions[ext] = cls(id)
 for (const [name, id] of Object.entries(json.fileNames)) map.fileNames[name] = cls(id)
 
+// The modern theme maps most common languages through `languageIds` (VS Code
+// resolves icons by language service); the Explorer only knows file names, so
+// merge a curated extension → languageId table for the popular types.
+const EXT_TO_LANGUAGE_ID = {
+  js: 'javascript', mjs: 'javascript', cjs: 'javascript', es6: 'javascript',
+  jsx: 'javascriptreact',
+  ts: 'typescript', mts: 'typescript', cts: 'typescript', tsx: 'typescriptreact',
+  json: 'json', jsonc: 'jsonc', jsonl: 'jsonl',
+  css: 'css', scss: 'scss', sass: 'sass', less: 'less', styl: 'stylus',
+  html: 'html', htm: 'html', vue: 'vue', erb: 'erb', haml: 'haml', pug: 'jade', jade: 'jade',
+  hbs: 'handlebars', mustache: 'mustache', njk: 'nunjucks',
+  md: 'markdown', markdown: 'markdown',
+  py: 'python', yaml: 'yaml', yml: 'yaml',
+  c: 'c', h: 'c', cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp', cu: 'cuda-cpp',
+  m: 'objective-c', mm: 'objective-cpp',
+  cs: 'csharp', java: 'java', go: 'go', rs: 'rust', rb: 'ruby', php: 'php',
+  sh: 'shellscript', bash: 'shellscript', zsh: 'shellscript',
+  bat: 'bat', cmd: 'bat', ps1: 'powershell', psm1: 'powershell', psd1: 'powershell',
+  sql: 'sql', ini: 'properties', env: 'dotenv',
+  dockerfile: 'dockerfile', makefile: 'makefile',
+  clj: 'clojure', cljs: 'clojure', ex: 'elixir', exs: 'elixir', elm: 'elm',
+  hs: 'haskell', kt: 'kotlin', kts: 'kotlin', groovy: 'groovy', scala: 'scala',
+  pl: 'perl', pm: 'perl', lua: 'lua', r: 'r', dart: 'dart', swift: 'swift',
+  tex: 'tex', latex: 'latex', jl: 'julia', fs: 'fsharp', fsx: 'fsharp',
+  tf: 'terraform', tfvars: 'terraform', gradle: 'gradle', bicep: 'bicep',
+  vala: 'vala', ml: 'ocaml', mli: 'ocaml', res: 'rescript', haxe: 'haxe',
+  godot: 'godot', gd: 'godot', zig: 'zig'
+}
+for (const [ext, langId] of Object.entries(EXT_TO_LANGUAGE_ID)) {
+  if (map.fileExtensions[ext] !== undefined) continue
+  const iconId = json.languageIds[langId]
+  if (iconId !== undefined) map.fileExtensions[ext] = cls(iconId)
+}
+
 writeFileSync(join(repoRoot, 'assets', 'seti.css'), css)
 writeFileSync(join(repoRoot, 'assets', 'seti-map.json'), JSON.stringify(map))
 console.log(`seti.css: ${css.length} bytes | seti-map.json: ${JSON.stringify(map).length} bytes (${Object.keys(map.fileExtensions).length} extensions, ${Object.keys(map.fileNames).length} filenames)`)

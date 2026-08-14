@@ -150,36 +150,50 @@
       '.wbx-back:hover{background:#2a2d2e}' +
       'body[data-wb-editor-active] [data-composer-seat]{display:none}')
 
-    // ---- seti icon assets ----
+    // ---- seti icon assets (with retry; failures reset so later mounts retry) ----
     const setiMap = { fileExtensions: {}, fileNames: {}, folder: 'seti-folder', folderOpen: 'seti-folder' }
     let setiPromise = null
+    let setiLoaded = false
     const loadSeti = () => {
       if (setiPromise !== null) return setiPromise
       setiPromise = (async () => {
-        try {
-          const css = await host.call('wb.assetText', { file: 'seti.css' })
-          if (css !== null && typeof css === 'object' && css.ok === true && typeof css.text === 'string') styles.insert(css.text)
-          const map = await host.call('wb.assetText', { file: 'seti-map.json' })
-          if (map !== null && typeof map === 'object' && map.ok === true && typeof map.text === 'string') {
-            const parsed = JSON.parse(map.text)
-            if (parsed && typeof parsed === 'object') {
-              if (parsed.fileExtensions) setiMap.fileExtensions = parsed.fileExtensions
-              if (parsed.fileNames) setiMap.fileNames = parsed.fileNames
-              if (typeof parsed.folder === 'string') setiMap.folder = parsed.folder
+        for (let attempt = 0; attempt < 3 && !setiLoaded; attempt++) {
+          try {
+            const css = await host.call('wb.assetText', { file: 'seti.css' })
+            const map = await host.call('wb.assetText', { file: 'seti-map.json' })
+            if (css !== null && typeof css === 'object' && css.ok === true && typeof css.text === 'string') styles.insert(css.text)
+            if (map !== null && typeof map === 'object' && map.ok === true && typeof map.text === 'string') {
+              const parsed = JSON.parse(map.text)
+              if (parsed && typeof parsed === 'object' && parsed.fileExtensions) {
+                setiMap.fileExtensions = parsed.fileExtensions
+                setiMap.fileNames = parsed.fileNames || {}
+                if (typeof parsed.folder === 'string') setiMap.folder = parsed.folder
+                setiLoaded = true
+                emit()
+                return true
+              }
             }
-          }
-        } catch (e) { console.error('[dsh-workbench] seti assets failed:', e) }
-      })()
+          } catch (e) { console.error('[dsh-workbench] seti attempt failed:', e) }
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 600))
+        }
+        if (!setiLoaded) console.warn('[dsh-workbench] seti icons unavailable; using built-in fallback icons')
+        return false
+      })().finally(() => {
+        if (!setiLoaded) setiPromise = null
+      })
       return setiPromise
     }
 
     const extOf = (name) => { const i = name.lastIndexOf('.'); return i <= 0 ? '' : name.slice(i + 1).toLowerCase() }
     const joinPath = (a, b) => a.replace(/\/+$/, '') + '/' + String(b).replace(/^\/+/, '')
+    // inline fallback so common file types keep correct icons even before/without the seti map asset
+    const EXT_ICONS = { js: 'seti-javascript', mjs: 'seti-javascript', cjs: 'seti-javascript', es6: 'seti-javascript', jsx: 'seti-react', ts: 'seti-typescript', mts: 'seti-typescript', cts: 'seti-typescript', tsx: 'seti-react', json: 'seti-json', jsonc: 'seti-json', jsonl: 'seti-json', css: 'seti-css', scss: 'seti-sass', sass: 'seti-sass', less: 'seti-less', styl: 'seti-stylus', html: 'seti-html_3', htm: 'seti-html_3', vue: 'seti-vue', pug: 'seti-pug', jade: 'seti-pug', hbs: 'seti-mustache', md: 'seti-markdown', markdown: 'seti-markdown', py: 'seti-python', yaml: 'seti-yml', yml: 'seti-yml', c: 'seti-c', h: 'seti-c', cpp: 'seti-cpp', cc: 'seti-cpp', cxx: 'seti-cpp', hpp: 'seti-cpp', cu: 'seti-cu', m: 'seti-c_2', mm: 'seti-cpp_2', cs: 'seti-c-sharp', java: 'seti-java', go: 'seti-go2', rs: 'seti-rust', rb: 'seti-ruby', php: 'seti-php', sh: 'seti-shell', bash: 'seti-shell', zsh: 'seti-shell', bat: 'seti-windows', cmd: 'seti-windows', ps1: 'seti-powershell', psm1: 'seti-powershell', psd1: 'seti-powershell', sql: 'seti-db', ini: 'seti-config', env: 'seti-config', dockerfile: 'seti-docker', makefile: 'seti-makefile', clj: 'seti-clojure', cljs: 'seti-clojure', ex: 'seti-elixir', exs: 'seti-elixir', elm: 'seti-elm', hs: 'seti-haskell', kt: 'seti-kotlin', kts: 'seti-kotlin', groovy: 'seti-grails', pl: 'seti-perl', pm: 'seti-perl', lua: 'seti-lua', r: 'seti-R', dart: 'seti-dart', swift: 'seti-swift', tex: 'seti-tex_1', latex: 'seti-tex', jl: 'seti-julia', fs: 'seti-f-sharp', fsx: 'seti-f-sharp', tf: 'seti-terraform', tfvars: 'seti-terraform', gradle: 'seti-gradle', bicep: 'seti-bicep', vala: 'seti-vala', ml: 'seti-ocaml', mli: 'seti-ocaml', godot: 'seti-godot' }
     const iconClassFor = (entry) => {
       if (entry.type === 'directory') return 'seti ' + setiMap.folder
       if (setiMap.fileNames[entry.name] !== undefined) return 'seti ' + setiMap.fileNames[entry.name]
       const ext = extOf(entry.name)
       if (ext !== '' && setiMap.fileExtensions[ext] !== undefined) return 'seti ' + setiMap.fileExtensions[ext]
+      if (ext !== '' && EXT_ICONS[ext] !== undefined) return 'seti ' + EXT_ICONS[ext]
       return 'seti seti-default'
     }
     const LANGUAGE = {
@@ -237,11 +251,22 @@
 
     // ---- monaco boot (page-level, started on first need) ----
     let bootStarted = false
+    let tsModeState = 'idle' // idle | loading | ready | failed
     const bootMonaco = () => {
       if (bootStarted || ui.monacoState !== 'idle') return
       bootStarted = true
       ui.monacoState = 'loading'
       emit()
+      // Absolute same-origin worker URL: the AMD default derives a root-relative
+      // path, which monaco's same-origin check misreads and wraps in a blob
+      // worker — inside a blob origin the TypeScript worker cannot fetch its
+      // module and IntelliSense dies. An explicit absolute URL keeps the worker
+      // on the http origin.
+      if (typeof window !== 'undefined' && window.MonacoEnvironment === undefined) {
+        window.MonacoEnvironment = {
+          getWorkerUrl: (moduleId, label) => window.location.origin + '/wb/vs/base/worker/workerMain.js#' + label
+        }
+      }
       const boot = () => {
         const req = typeof window !== 'undefined' ? window.require : undefined
         if (!req || typeof req.config !== 'function') { ui.monacoState = 'error'; emit(); return }
@@ -266,6 +291,39 @@
       } else { ui.monacoState = 'error'; emit() }
     }
 
+    // TypeScript language service (IntelliSense-grade completions for js/ts/tsx)
+    const ensureTsMode = () => {
+      if (tsModeState !== 'idle' || ui.monacoState !== 'ready') return
+      tsModeState = 'loading'
+      const req = typeof window !== 'undefined' ? window.require : undefined
+      if (!req || typeof req !== 'function') { tsModeState = 'failed'; return }
+      req(['vs/language/typescript/tsMode'], () => {
+        try {
+          const ts = ui.monaco.languages.typescript
+          const compilerOptions = {
+            target: ts.ScriptTarget.ES2020,
+            module: ts.ModuleKind.ESNext,
+            moduleResolution: ts.ModuleResolutionKind.NodeJs,
+            allowNonTsExtensions: true,
+            allowJs: true,
+            jsx: ts.JsxEmit.ReactJSX,
+            lib: ['lib.es2020.d.ts', 'lib.dom.d.ts']
+          }
+          ts.javascriptDefaults.setCompilerOptions({ ...compilerOptions, checkJs: false })
+          ts.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false })
+          ts.javascriptDefaults.setEagerModelSync(true)
+          ts.typescriptDefaults.setCompilerOptions({ ...compilerOptions })
+          ts.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false })
+          ts.typescriptDefaults.setEagerModelSync(true)
+          tsModeState = 'ready'
+          emit()
+        } catch (e) {
+          console.error('[dsh-workbench] tsMode setup failed:', e)
+          tsModeState = 'failed'
+        }
+      }, () => { tsModeState = 'failed' })
+    }
+
     // ---- file operations ----
     const openFile = async (path, name) => {
       if (!ui.tabs.some((tb) => tb.path === path)) {
@@ -274,6 +332,8 @@
       ui.activePath = path
       emit()
       switchToEditor()
+      const opening = ui.tabs.find((tb) => tb.path === path)
+      if (opening !== undefined && (opening.lang === 'javascript' || opening.lang === 'typescript')) ensureTsMode()
       if (ui.contents.has(path) || ui.models.has(path)) return
       try {
         const res = await host.call('wb.readFile', { path })
@@ -589,7 +649,12 @@
           wordWrap: 'off',
           renderWhitespace: 'selection',
           tabSize: 2,
-          padding: { top: 10 }
+          padding: { top: 10 },
+          wordBasedSuggestions: 'currentDocument',
+          quickSuggestions: { other: true, comments: false, strings: false },
+          suggestOnTriggerCharacters: true,
+          acceptSuggestionOnEnter: 'on',
+          tabCompletion: 'on'
         })
         u.editor = editor
         editor.addCommand(u.monaco.KeyMod.CtrlCmd | u.monaco.KeyCode.KeyS, () => { savePath(u.activePath, true) })
@@ -602,11 +667,15 @@
       // materialize models from pending contents; bind the active model
       React.useEffect(() => {
         if (u.monacoState !== 'ready') return
+        for (const tb of u.tabs) {
+          if (tb.lang === 'javascript' || tb.lang === 'typescript') ensureTsMode()
+        }
         let changed = false
         for (const tb of u.tabs) {
           const content = u.contents.get(tb.path)
           if (content !== undefined && !u.models.has(tb.path)) {
-            const model = u.monaco.editor.createModel(content, tb.lang)
+            const uri = u.monaco.Uri.parse('file:///' + tb.path.replace(/\\/g, '/'))
+            const model = u.monaco.editor.createModel(content, tb.lang, uri)
             u.models.set(tb.path, model)
             u.contents.delete(tb.path)
             u.savedAltIds.set(tb.path, model.getAlternativeVersionId())
