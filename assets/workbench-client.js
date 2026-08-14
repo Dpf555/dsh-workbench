@@ -103,23 +103,23 @@
       '.wb-codicon-new-folder::before{content:"\\ea80"}.wb-codicon-chevron-right::before{content:"\\eab6"}.wb-codicon-chevron-down::before{content:"\\eab4"}' +
       '.wb-codicon-collapse-all::before{content:"\\eac5"}.wb-codicon-chevron-left::before{content:"\\eab5"}' +
       '.wb-codicon-comment-discussion::before{content:"\\eacf"}' +
-      '.wbx-explorer{height:100%;display:flex;flex-direction:column;min-width:0;color:#cccccc;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;font-size:13px}' +
-      '.wbx-header{flex:none;display:flex;align-items:center;height:35px;padding:0 8px;gap:4px;border-bottom:1px solid rgba(128,128,128,.25)}' +
-      '.wbx-title{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#bbbbbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-      '.wb-icon-btn{cursor:pointer;border:none;background:transparent;color:#cccccc;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}' +
-      '.wb-icon-btn:hover{background:#3a3d41}' +
+      '.wbx-explorer{height:100%;display:flex;flex-direction:column;min-width:0;color:var(--dsw-alias-label-primary);font-family:"Segoe UI",system-ui,-apple-system,sans-serif;font-size:13px}' +
+      '.wbx-header{flex:none;display:flex;align-items:center;height:35px;padding:0 8px;gap:4px;border-bottom:1px solid var(--dsw-alias-border-l2)}' +
+      '.wbx-title{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.wb-icon-btn{cursor:pointer;border:none;background:transparent;color:var(--dsw-alias-label-secondary);width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}' +
+      '.wb-icon-btn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}' +
       '.wbx-tree{flex:1;overflow:auto;padding:2px 0 8px;min-height:0}' +
       '.wbx-tree::-webkit-scrollbar{width:10px}.wbx-tree::-webkit-scrollbar-thumb{background:rgba(121,121,121,.4)}' +
       '.wbx-tree::-webkit-scrollbar-thumb:hover{background:rgba(121,121,121,.7)}' +
-      '.wb-row{display:flex;align-items:center;height:22px;line-height:22px;cursor:pointer;white-space:nowrap;color:#cccccc}' +
-      '.wb-row:hover{background:#2a2d2e}' +
-      '.wb-row-selected{background:#04395e}.wb-row-selected:hover{background:#094771}' +
-      '.wb-row-chevron{flex:none;width:16px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#cccccc}' +
+      '.wb-row{display:flex;align-items:center;height:22px;line-height:22px;cursor:pointer;white-space:nowrap;color:var(--dsw-alias-label-primary)}' +
+      '.wb-row:hover{background:var(--dsw-alias-interactive-bg-hover)}' +
+      '.wb-row-selected{background:#04395e;color:#ffffff}.wb-row-selected:hover{background:#094771;color:#ffffff}' +
+      '.wb-row-chevron{flex:none;width:16px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dsw-alias-label-secondary)}' +
       '.wb-row-icon{flex:none;width:18px;height:22px;display:flex;align-items:center;justify-content:center;font-size:15px}' +
       '.wb-row-name{flex:1;overflow:hidden;text-overflow:ellipsis;padding-right:6px}' +
-      '.wb-row-loading{color:#858585;font-style:italic}' +
+      '.wb-row-loading{color:var(--dsw-alias-label-tertiary);font-style:italic}' +
       '.wbx-create-row{display:flex;align-items:center;height:24px;margin:2px 0;padding-left:20px;gap:6px}' +
-      '.wbx-create-input{flex:1;background:#3c3c3c;border:1px solid #007fd4;color:#cccccc;outline:none;height:20px;line-height:20px;padding:0 6px;font-size:13px;font-family:inherit;border-radius:2px}' +
+      '.wbx-create-input{flex:1;background:var(--dsw-alias-bg-base);border:1px solid #007fd4;color:var(--dsw-alias-label-primary);outline:none;height:20px;line-height:20px;padding:0 6px;font-size:13px;font-family:inherit;border-radius:2px}' +
       '.wbx-editor{height:100%;display:flex;flex-direction:column;min-width:0;background:#1e1e1e;color:#cccccc}' +
       '.wbx-tabs{flex:none;display:flex;align-items:stretch;height:35px;background:#252526;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid rgba(128,128,128,.2)}' +
       '.wbx-tabs::-webkit-scrollbar{height:3px}.wbx-tabs::-webkit-scrollbar-thumb{background:rgba(121,121,121,.4)}' +
