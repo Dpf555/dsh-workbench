@@ -48,6 +48,8 @@
       'action.collapsePanel': '收起面板',
       'view.editor': '代码',
       'view.back': '返回会话',
+      'view.preview': '预览',
+      'view.edit': '编辑',
       'welcome.title': '未打开文件',
       'welcome.hint': '在右侧资源管理器中点击文件，即可在此处编辑。Ctrl+S 保存。',
       'banner.saved': '已保存',
@@ -75,6 +77,8 @@
       'action.collapsePanel': 'Collapse panel',
       'view.editor': 'Code',
       'view.back': 'Back to chat',
+      'view.preview': 'Preview',
+      'view.edit': 'Edit',
       'welcome.title': 'No file open',
       'welcome.hint': 'Click a file in the Explorer on the right to edit it here. Ctrl+S to save.',
       'banner.saved': 'Saved',
@@ -153,7 +157,31 @@
       '.wbx-statusbar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
       '.wbx-back{flex:none;display:flex;align-items:center;gap:6px;cursor:pointer;background:transparent;border:none;color:var(--dsw-alias-label-primary);padding:6px 12px;font-size:13px;font-family:inherit}' +
       '.wbx-back:hover{background:var(--dsw-alias-interactive-bg-hover)}' +
-      'body[data-wb-editor-active] [data-composer-seat]{display:none}')
+      'body[data-wb-editor-active] [data-composer-seat]{display:none}' +
+      '.wbx-preview-toggle{flex:none;align-self:center;margin-left:auto;margin-right:8px;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:4px;font-size:12px;line-height:20px;padding:0 10px;cursor:pointer;white-space:nowrap}' +
+      '.wbx-preview-toggle:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}' +
+      '.wbx-preview-toggle-on{background:var(--dsw-alias-state-business-tertiary);color:var(--dsw-alias-label-primary-bluish);border-color:var(--dsw-alias-state-business-tertiary)}' +
+      '.wbx-preview{flex:1;min-height:0;overflow:auto;padding:20px 28px 48px;line-height:1.7;color:var(--dsw-alias-label-primary);font-size:14px}' +
+      '.wbx-preview h1,.wbx-preview h2,.wbx-preview h3,.wbx-preview h4,.wbx-preview h5,.wbx-preview h6{line-height:1.3;margin:1.2em 0 .6em;color:var(--dsw-alias-label-primary);font-weight:600}' +
+      '.wbx-preview h1{font-size:1.8em;border-bottom:1px solid var(--dsw-alias-border-l2);padding-bottom:.3em}' +
+      '.wbx-preview h2{font-size:1.45em;border-bottom:1px solid var(--dsw-alias-border-l2);padding-bottom:.25em}' +
+      '.wbx-preview h3{font-size:1.2em}.wbx-preview h4{font-size:1.05em}' +
+      '.wbx-preview p{margin:.6em 0}' +
+      '.wbx-preview a{color:var(--dsw-alias-label-primary-bluish)}' +
+      '.wbx-preview code{font-family:Consolas,"Cascadia Code",monospace;background:var(--dsw-alias-markdown-code-block, rgba(127,127,127,.16));border-radius:4px;padding:1px 5px;font-size:.92em}' +
+      '.wbx-preview pre{background:var(--dsw-alias-markdown-code-block, rgba(127,127,127,.14));border-radius:8px;padding:12px 14px;overflow:auto;margin:.8em 0}' +
+      '.wbx-preview pre code{background:none;padding:0;font-size:.92em;line-height:1.5}' +
+      '.wbx-preview blockquote{border-left:3px solid var(--dsw-alias-border-l3);margin:.8em 0;padding:2px 14px;color:var(--dsw-alias-label-tertiary)}' +
+      '.wbx-preview ul,.wbx-preview ol{padding-left:1.6em;margin:.6em 0}' +
+      '.wbx-preview li{margin:.2em 0}' +
+      '.wbx-preview table{border-collapse:collapse;margin:.8em 0;display:block;overflow-x:auto;max-width:100%}' +
+      '.wbx-preview th,.wbx-preview td{border:1px solid var(--dsw-alias-border-l2);padding:5px 12px;text-align:left}' +
+      '.wbx-preview th{background:var(--dsw-specific-sidebar-fill, rgba(127,127,127,.08));font-weight:600}' +
+      '.wbx-preview hr{border:none;border-top:1px solid var(--dsw-alias-border-l2);margin:1.4em 0}' +
+      '.wbx-preview img{max-width:100%}' +
+      '.wbx-preview .wbx-md-task{display:inline-flex;align-items:center;gap:6px;cursor:default}' +
+      '.wbx-preview .wbx-md-task input{margin:0;accent-color:var(--dsw-alias-label-primary-bluish)}' +
+      '.wbx-preview del{color:var(--dsw-alias-label-tertiary)}')
 
     // ---- seti icon assets (with retry; failures reset so later mounts retry) ----
     const setiMap = { fileExtensions: {}, fileNames: {}, folder: 'seti-folder', folderOpen: 'seti-folder' }
@@ -218,6 +246,106 @@
       return LANGUAGE[extOf(name)] || 'plaintext'
     }
 
+    // ---- markdown preview (self-contained renderer, no runtime deps) ----
+    const isMarkdown = (name) => /\.(md|markdown|mdown|mkd|mdx)$/i.test(String(name || ''))
+    const escHtml = (s) => String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    const inlineMd = (text) => {
+      let s = escHtml(text)
+      s = s.replace(/`([^`]+)`/g, (m, c) => '<code>' + c + '</code>')
+      s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (m, alt, url) => '<img src="' + escHtml(url) + '" alt="' + escHtml(alt) + '">')
+      s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (m, t, url) => '<a href="' + escHtml(url) + '" target="_blank" rel="noopener noreferrer">' + t + '</a>')
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>')
+      s = s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+      s = s.replace(/(^|[^_])_([^_\s][^_]*)_/g, '$1<em>$2</em>')
+      s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>')
+      return s
+    }
+    const renderMarkdown = (src) => {
+      const lines = String(src == null ? '' : src).replace(/\r\n/g, '\n').split('\n')
+      const out = []
+      let para = []
+      let list = null // { tag: 'ul'|'ol', items: [], olNum }
+      let fence = null // { lang, buf: [] }
+      const flushPara = () => {
+        if (para.length > 0) { out.push('<p>' + inlineMd(para.join(' ')) + '</p>'); para = [] }
+      }
+      const flushList = () => {
+        if (list === null) return
+        out.push(list.tag === 'ol' ? '<ol start="' + list.olNum + '">' : '<ul>')
+        for (const item of list.items) out.push('<li>' + item + '</li>')
+        out.push('</' + list.tag + '>')
+        list = null
+      }
+      const flushFence = () => {
+        if (fence === null) return
+        out.push('<pre><code' + (fence.lang ? ' class="language-' + escHtml(fence.lang) + '"' : '') + '>' + escHtml(fence.buf.join('\n')) + '</code></pre>')
+        fence = null
+      }
+      let i = 0
+      while (i < lines.length) {
+        const raw = lines[i]
+        const line = raw.replace(/\s+$/, '')
+        const trimmed = line.trim()
+        if (fence !== null) {
+          if (/^```/.test(trimmed)) { flushFence() } else fence.buf.push(raw)
+          i++; continue
+        }
+        if (/^```/.test(trimmed)) { flushPara(); flushList(); fence = { lang: trimmed.slice(3).trim(), buf: [] }; i++; continue }
+        if (trimmed === '') { flushPara(); flushList(); i++; continue }
+        const heading = line.match(/^(#{1,6})\s+(.*)$/)
+        if (heading) { flushPara(); flushList(); out.push('<h' + heading[1].length + '>' + inlineMd(heading[2]) + '</h' + heading[1].length + '>'); i++; continue }
+        const hr = line.match(/^(\s*([-*_])\s*){3,}$/)
+        if (hr) { flushPara(); flushList(); out.push('<hr>'); i++; continue }
+        if (/^>\s?/.test(line)) {
+          flushPara(); flushList()
+          const q = []
+          while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(lines[i].replace(/^>\s?/, '')); i++ }
+          out.push('<blockquote><p>' + inlineMd(q.join('\n')) + '</p></blockquote>')
+          continue
+        }
+        const ul = line.match(/^\s*[-*+]\s+(.*)$/)
+        const ol = line.match(/^\s*(\d+)\.\s+(.*)$/)
+        if (ul !== null || ol !== null) {
+          flushPara()
+          const tag = ul !== null ? 'ul' : 'ol'
+          if (list === null || list.tag !== tag) { flushList(); list = { tag, items: [], olNum: ol !== null ? parseInt(ol[1], 10) : 1 } }
+          else if (ol !== null) list.olNum = Math.min(list.olNum, parseInt(ol[1], 10))
+          const content = ul !== null ? ul[1] : ol[2]
+          const task = content.match(/^\[([ xX])\]\s+(.*)$/)
+          list.items.push(task !== null
+            ? '<label class="wbx-md-task"><input type="checkbox" disabled' + (task[1] !== ' ' ? ' checked' : '') + '> ' + inlineMd(task[2]) + '</label>'
+            : inlineMd(content))
+          i++; continue
+        }
+        // GFM table: header row + separator row (dashes)
+        const sep = lines[i + 1]
+        if (line.indexOf('|') !== -1 && sep !== undefined && sep.indexOf('-') !== -1 && /^\s*\|?[\s:|-]+\|?[\s:|-]*\|?\s*$/.test(sep)) {
+          flushPara(); flushList()
+          const parseRow = (r) => r.replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
+          const header = parseRow(line)
+          const aligns = parseRow(sep)
+          i += 2
+          const rows = []
+          while (i < lines.length && lines[i].indexOf('|') !== -1 && lines[i].trim() !== '') { rows.push(parseRow(lines[i])); i++ }
+          out.push('<table><thead><tr>' + header.map((c, ci) => {
+            const a = (aligns[ci] || '').trim()
+            const style = a.indexOf(':') === 0 && a.lastIndexOf(':') === a.length - 1 ? ' style="text-align:center"'
+              : a.lastIndexOf(':') === a.length - 1 ? ' style="text-align:right"'
+              : a.indexOf(':') === 0 ? ' style="text-align:left"' : ''
+            return '<th' + style + '>' + inlineMd(c) + '</th>'
+          }).join('') + '</tr></thead><tbody>' + rows.map((r) => '<tr>' + header.map((_, ci) => '<td>' + inlineMd(r[ci] || '') + '</td>').join('') + '</tr>').join('') + '</tbody></table>')
+          continue
+        }
+        para.push(line)
+        i++
+      }
+      flushPara(); flushList(); flushFence()
+      return out.join('\n')
+    }
+
     // ---- page-level shared UI state ----
     const ui = {
       sessionId: null,
@@ -237,6 +365,7 @@
       tree: null,
       create: null,
       banner: null,
+      preview: false,
       listeners: new Set()
     }
     const emit = () => { ui.listeners.forEach((l) => l()) }
@@ -491,6 +620,7 @@
           u.conflict = new Set()
           u.closing = new Set()
           u.banner = null
+          u.preview = false
           u.tree = null
         }
       }
@@ -730,7 +860,6 @@
         if (changed) emit()
       }, [u.monacoState, u.tabs, u.activePath])
 
-      const activeTab = u.tabs.find((tb) => tb.path === u.activePath) || null
       const errorText = (code) => {
         if (code === 'too-large') return t('error.too-large')
         if (code === 'not-text') return t('error.not-text')
@@ -738,6 +867,13 @@
         return t('error.loading') + ' (' + code + ')'
       }
       const bridge = bridgeFor(sessionId)
+      const activeTab = u.tabs.find((tb) => tb.path === u.activePath) || null
+      const previewOn = u.preview === true && activeTab !== null && activeTab.status === 'ready' && isMarkdown(activeTab.name)
+      const mdText = (path) => {
+        const model = u.models.get(path)
+        if (model !== undefined) { try { return model.getValue() } catch (e) {} }
+        return u.contents.get(path) || ''
+      }
 
       return React.createElement('div', {
         className: 'wbx-editor',
@@ -763,6 +899,15 @@
                 ]
               })
             }),
+            activeTab !== null && isMarkdown(activeTab.name) && activeTab.status === 'ready'
+              ? React.createElement('button', {
+                  type: 'button',
+                  className: 'wbx-preview-toggle' + (previewOn ? ' wbx-preview-toggle-on' : ''),
+                  title: previewOn ? t('view.edit') : t('view.preview'),
+                  onClick: () => { u.preview = !u.preview; emit() },
+                  children: (previewOn ? t('view.edit') : t('view.preview'))
+                })
+              : null,
             bridge !== null
               ? React.createElement('button', { type: 'button', className: 'wbx-back', title: t('view.back'), onClick: () => bridge.setView('chat'), children: [
                   React.createElement('span', { className: 'wb-codicon wb-codicon-comment-discussion' }),
@@ -782,7 +927,7 @@
                 React.createElement('button', { type: 'button', className: 'wbx-banner-btn', style: { border: 'none' }, onClick: () => { u.banner = null; emit() }, children: React.createElement('span', { className: 'wb-codicon wb-codicon-close' }) })
               ] })
             : null,
-          React.createElement('div', { className: 'wbx-holder', ref: holderRef, children: [
+          React.createElement('div', { className: 'wbx-holder', style: previewOn ? { display: 'none' } : undefined, ref: holderRef, children: [
             u.monacoState === 'loading' ? React.createElement('div', { className: 'wbx-loading', children: t('loading') }) : null,
             u.monacoState === 'error' && activeTab !== null ? React.createElement('textarea', {
               style: { position: 'absolute', inset: 0, width: '100%', height: '100%', boxSizing: 'border-box', background: 'var(--dsw-alias-bg-base)', color: 'var(--dsw-alias-label-primary)', border: 'none', padding: 10, fontFamily: 'Consolas, monospace', fontSize: 13, resize: 'none', outline: 'none' },
@@ -799,6 +944,9 @@
               React.createElement('span', { className: 'wbx-welcome-title', children: errorText(activeTab.error) })
             ] }) : null
           ] }),
+          previewOn
+            ? React.createElement('div', { className: 'wbx-preview', dangerouslySetInnerHTML: { __html: renderMarkdown(mdText(activeTab.path)) } })
+            : null,
           React.createElement('div', { className: 'wbx-statusbar', children: [
             React.createElement('span', { children: activeTab !== null ? activeTab.path : (u.tree !== null ? u.tree.root : '') }),
             React.createElement('span', { children: (activeTab !== null ? activeTab.lang + ' · ' : '') + u.tabs.length + ' ' + t('status.files') + (u.dirty.size > 0 ? ' · ' + u.dirty.size + ' ✎' : '') })
