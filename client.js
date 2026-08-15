@@ -13,8 +13,20 @@ window.__ModuleLoader__.load({
       if (slots === undefined) return
       const locale = ctx.get('locale')
       const layout = ctx.get('layout')
+      const sessions = ctx.get('sessions')
       const NS = 'workbench'
-      const params = { slots, locale, NS, React, layout }
+      // Workspace follow: pass the sessions store so the explorer tracks the
+      // ACTIVE session's cwd (render-time hook; ExplorerRoot calls it with a
+      // selector). Mirrors the sidebar-patch mount path, so whichever mount
+      // wins the bundle's one-shot guard carries the same capability.
+      let useSessions
+      if (sessions !== undefined && sessions.list !== undefined && typeof sessions.list.subscribe === 'function' && typeof sessions.list.getSnapshot === 'function') {
+        useSessions = (selector) => {
+          const snapshot = React.useSyncExternalStore(sessions.list.subscribe, sessions.list.getSnapshot)
+          return selector(snapshot)
+        }
+      }
+      const params = { slots, locale, NS, React, layout, ...(useSessions !== undefined ? { useSessions } : {}) }
 
       const ready = () => typeof window !== 'undefined' && window.__DSH_WORKBENCH__ !== undefined
         && typeof window.__DSH_WORKBENCH__.mount === 'function'

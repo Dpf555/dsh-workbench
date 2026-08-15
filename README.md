@@ -73,6 +73,15 @@ DSH 的客户端壳不提供"常驻右栏 + 点击文件切换中间视图"的�
 3. Ctrl+S 保存；顶部"对话 / 代码"标签或"返回会话"按钮切换
 4. 右栏头部：新建文件/文件夹、刷新、全部折叠、`«` 收起面板；左边缘拖宽；**收起后右侧保留 28px 窄条，点击即可重新展开**
 
+## 工作区跟随
+
+文件树根 = **当前活跃会话的工作区**（该会话的 `header.cwd`，即其沙箱边界）：
+- 切换到哪个工作区/会话，右栏就显示那个工作区的文件；切换时编辑器标签页与文件树自动重建
+- 客户端把活跃会话 id 注入每个 `/wb/api/*` 调用，服务端按 `sandboxPolicy.resolve({ session })` 解析栅栏根
+- 无活跃会话时回退到部署根（`sandboxPolicy` fallback root，可通过 profile 的 `cordis.patch.yml` 固定）
+
+> 注意：会话级解析需要主机半部注入 `sessions` 服务，改完 `index.js` / `client.js` 后需**重启 `dsh web`** 再硬刷新。
+
 ## 卸载
 
 1. 删除 `<DSH_HOME>/profiles/web/cordis.patch.yml` 中 `- insert:` 的 `workbench` 行，重启 `dsh web`
@@ -83,8 +92,8 @@ DSH 的客户端壳不提供"常驻右栏 + 点击文件切换中间视图"的�
 
 - `ctx.fs` 契约无 rename/delete → 暂不支持重命名/删除文件
 - 二进制文件只读拒绝；单文件读取上限 5MB
-- 未打开会话时右栏可见但点击文件不切换中间视图（视图环是会话级的）
-- 文件树根 = 部署沙箱工作区根（`sandboxPolicy` fallback root）
+- 未打开会话时右栏可见但点击文件不切换中间视图（视图环是会话级的）；此时文件树显示部署根
+- 文件树根 = 当前活跃会话的工作区（无会话时回退到 `sandboxPolicy` fallback root，可用 profile 补丁固定）
 
 ## 致谢与许可
 

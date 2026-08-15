@@ -26,10 +26,15 @@
     const host = {
       call: (method, args) => {
         const op = String(method).indexOf('wb.') === 0 ? String(method).slice(3) : String(method)
+        // Every op rides the currently active session: the server fences to
+        // that session's workspace, so the explorer follows the workspace the
+        // user is working in (deployment root when no session is active).
+        const inner = args === undefined || args === null ? {} : { ...args }
+        if (ui.sessionId !== null && ui.sessionId !== undefined) inner.sessionId = ui.sessionId
         return fetch('/wb/api/' + op, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(args === undefined || args === null ? {} : { args })
+          body: JSON.stringify({ args: inner })
         }).then((r) => r.json(), () => ({ ok: false, error: 'rpc' }))
       }
     }
@@ -471,14 +476,31 @@
       const u = useUI()
       if (typeof props.useSessions === 'function') {
         const current = props.useSessions((s) => s.current)
-        if (u.sessionId !== current) u.sessionId = current
+        if (u.sessionId !== current) {
+          // Workspace switch: drop the previous session's editor state and
+          // tree so the next bootstrap targets the now-active session's cwd.
+          u.sessionId = current
+          try { for (const m of u.models.values()) m.dispose() } catch (e) {}
+          u.models = new Map()
+          u.contents = new Map()
+          u.savedVersions = new Map()
+          u.savedAltIds = new Map()
+          u.tabs = []
+          u.activePath = null
+          u.dirty = new Set()
+          u.conflict = new Set()
+          u.closing = new Set()
+          u.banner = null
+          u.tree = null
+        }
       }
       const tr = u.tree
       const [create, setCreate] = React.useState(null)
       React.useEffect(() => { u.create = create }, [create])
       React.useEffect(() => { loadSeti() }, [])
 
-      // bootstrap tree at workspace root
+      // bootstrap tree at the active session's workspace root (re-runs on
+      // session switch; the session-switch handler above already nulled it)
       React.useEffect(() => {
         if (u.tree !== null) return
         let disposed = false
@@ -492,7 +514,7 @@
           }, () => {})
         }, () => {})
         return () => { disposed = true }
-      }, [])
+      }, [u.sessionId])
 
       const toggleDir = (path) => {
         const trr = ui.tree

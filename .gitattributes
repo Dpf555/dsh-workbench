@@ -1,0 +1,4 @@
+# Patch files are consumed by `git apply` against LF-only DSH bundles; force
+# LF in every working tree (repo-local core.autocrlf=true would otherwise
+# check them out as CRLF and break apply-patches.mjs on Windows).
+*.patch text eol=lf

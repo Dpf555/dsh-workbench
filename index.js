@@ -4,12 +4,19 @@
 // JSON file operations. File operations run through ctx.fs and are fenced to
 // the workspace root of the DSH sandbox policy; writes pass the resolved
 // sandbox policy so the sandbox backend enforces its own boundary.
+//
+// Workspace follow: every op accepts an optional `sessionId`. When it is given
+// and resolves to a live session with a `header.cwd`, the fence root becomes
+// THAT session's workspace (its own sandbox boundary); otherwise the
+// deployment fallback root applies. The web client passes the currently active
+// session id, so the explorer always shows the workspace the user is working
+// in.
 import { basename, dirname, extname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mkdir, readFile } from 'node:fs/promises'
 
 export const name = 'dsh-workbench'
-export const inject = ['webServer', 'fs', 'sandboxPolicy']
+export const inject = ['webServer', 'fs', 'sandboxPolicy', 'sessions']
 
 const MIME = {
   '.js': 'text/javascript; charset=utf-8',
@@ -28,19 +35,32 @@ const MIME = {
 export function apply(ctx) {
   const fs = ctx.fs
   const sandboxPolicy = ctx.sandboxPolicy
+  const sessions = ctx.sessions
   const webServer = ctx.webServer
   const assetsRoot = join(dirname(fileURLToPath(import.meta.url)), 'assets')
 
-  const rootPath = () => {
-    const policy = sandboxPolicy.resolve({})
+  // Per-call policy: the owning session's sandbox boundary wins (its cwd is
+  // the workspace-write root), otherwise the deployment fallback.
+  const policyOf = (sessionId) => {
+    if (sessionId !== null && sessionId !== undefined && sessionId !== '') {
+      try {
+        const session = sessions.get(sessionId)
+        if (session !== undefined && session.header !== null && typeof session.header.cwd === 'string' && session.header.cwd !== '') {
+          return sandboxPolicy.resolve({ session })
+        }
+      } catch (e) { /* session store read failed — fall through to deployment root */ }
+    }
+    return sandboxPolicy.resolve({})
+  }
+  const rootFor = (sessionId) => {
+    const policy = policyOf(sessionId)
     if (policy === null || typeof policy.workspaceRoot !== 'string' || policy.workspaceRoot === '') {
       throw new Error('dsh-workbench: no workspace root resolved')
     }
     return policy.workspaceRoot
   }
-  const policyOf = () => sandboxPolicy.resolve({})
-  const resolveInside = async (path) => {
-    const rootTarget = await fs.resolve(rootPath(), {})
+  const resolveInside = async (path, sessionId) => {
+    const rootTarget = await fs.resolve(rootFor(sessionId), {})
     const target = await fs.resolve(String(path), {})
     if (!fs.contains(rootTarget, target)) throw new Error('path-outside-workspace')
     return target
@@ -49,15 +69,17 @@ export function apply(ctx) {
   const textOf = (e) => (e instanceof Error ? e.message : String(e))
 
   const ops = {
-    describe: async () => {
-      const root = rootPath()
-      return { ok: true, root, rootName: basename(root) }
+    describe: async (args) => {
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const root = rootFor(sessionId)
+      return { ok: true, root, rootName: basename(root), sessionId: sessionId ?? null }
     },
 
     listDir: async (args) => {
-      const path = args === null || args.path === undefined ? rootPath() : args.path
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const path = args === null || args === undefined || args.path === undefined ? rootFor(sessionId) : args.path
       try {
-        const target = await resolveInside(path)
+        const target = await resolveInside(path, sessionId)
         const info = await fs.stat(target)
         if (info === undefined) return { ok: false, error: 'not-found' }
         if (info.type !== 'directory') return { ok: false, error: 'not-directory' }
@@ -78,9 +100,10 @@ export function apply(ctx) {
     },
 
     readFile: async (args) => {
-      const path = args === null ? '' : args.path
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const path = args === null || args === undefined ? '' : args.path
       try {
-        const target = await resolveInside(path)
+        const target = await resolveInside(path, sessionId)
         const info = await fs.stat(target)
         if (info === undefined) return { ok: false, error: 'not-found' }
         if (info.type !== 'file') return { ok: false, error: 'not-file' }
@@ -101,15 +124,16 @@ export function apply(ctx) {
     },
 
     writeFile: async (args) => {
-      const path = args === null ? '' : args.path
-      const content = args === null ? '' : args.content
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const path = args === null || args === undefined ? '' : args.path
+      const content = args === null || args === undefined ? '' : args.content
       if (typeof content !== 'string') return { ok: false, error: 'bad-content' }
       try {
-        const target = await resolveInside(path)
-        const expected = (args !== null && args.expected !== undefined && args.expected !== null)
+        const target = await resolveInside(path, sessionId)
+        const expected = (args !== null && args !== undefined && args.expected !== undefined && args.expected !== null)
           ? { kind: 'replaceIfVersion', version: String(args.expected) }
           : undefined
-        const outcome = await fs.writeText(target, content, expected, undefined, policyOf())
+        const outcome = await fs.writeText(target, content, expected, undefined, policyOf(sessionId))
         return { ok: true, operation: outcome.operation, version: String(outcome.version) }
       } catch (e) {
         const code = codeOf(e)
@@ -122,10 +146,11 @@ export function apply(ctx) {
     },
 
     createFile: async (args) => {
-      const path = args === null ? '' : args.path
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const path = args === null || args === undefined ? '' : args.path
       try {
-        const target = await resolveInside(path)
-        const outcome = await fs.writeText(target, '', { kind: 'createIfAbsent' }, undefined, policyOf())
+        const target = await resolveInside(path, sessionId)
+        const outcome = await fs.writeText(target, '', { kind: 'createIfAbsent' }, undefined, policyOf(sessionId))
         return { ok: true, operation: outcome.operation, version: String(outcome.version) }
       } catch (e) {
         const code = codeOf(e)
@@ -137,12 +162,13 @@ export function apply(ctx) {
     },
 
     createDir: async (args) => {
-      const parent = args === null ? '' : args.parent
-      const name = args === null ? '' : args.name
+      const sessionId = args === null || args === undefined ? undefined : args.sessionId
+      const parent = args === null || args === undefined ? '' : args.parent
+      const name = args === null || args === undefined ? '' : args.name
       if (typeof name !== 'string' || name.trim() === '' || name === '.' || name === '..' || /[/\\]/.test(name)) {
         return { ok: false, error: 'bad-name' }
       }
-      try { await resolveInside(parent) } catch (e) { return { ok: false, error: 'outside-workspace' } }
+      try { await resolveInside(parent, sessionId) } catch (e) { return { ok: false, error: 'outside-workspace' } }
       const target = join(parent, name)
       try {
         await mkdir(target)
@@ -154,7 +180,7 @@ export function apply(ctx) {
     },
 
     assetText: async (args) => {
-      const file = args === null ? '' : args.file
+      const file = args === null || args === undefined ? '' : args.file
       const allow = { 'seti.css': true, 'seti-map.json': true }
       if (!Object.prototype.hasOwnProperty.call(allow, file)) return { ok: false, error: 'forbidden' }
       try {
