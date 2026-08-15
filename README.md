@@ -1,5 +1,7 @@
 # DSH Workbench — VS Code 风格三栏布局插件
 
+中文 | [English](README.en.md)
+
 参考 [microsoft/vscode](https://github.com/microsoft/vscode) 的设计，为 DeepSeek Harness（DSH）Web GUI 增加：
 
 - **右侧常驻 Explorer 文件树**（VS Code 官方 seti 文件类型图标、展开/折叠、新建文件/文件夹、刷新、全部折叠、可拖宽/折叠面板）

@@ -17,6 +17,7 @@
     "scripts/**",
     "dynamic/**",
     "README.md",
+    "README.en.md",
     "LICENSE"
   ],
   "scripts": {
