@@ -728,7 +728,7 @@
           }
         }
         if (changed) emit()
-      }, [u.monacoState, u])
+      }, [u.monacoState, u.tabs, u.activePath])
 
       const activeTab = u.tabs.find((tb) => tb.path === u.activePath) || null
       const errorText = (code) => {
